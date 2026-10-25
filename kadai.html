@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="ja" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CampusHub - 大学生のための学習・タスク管理アプリ</title>
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .dark ::-webkit-scrollbar-thumb { background: #475569; }
+    </style>
+</head>
+<body class="h-full bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100 transition-colors duration-200 flex flex-col">
+
+    <!-- Header / Navigation -->
+    <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo -->
+                <div class="flex items-center gap-3">
+                    <div class="bg-brand-600 text-white p-2.5 rounded-xl shadow-md">
+                        <i class="fa-solid fa-graduation-cap text-xl"></i>
+                    </div>
+                    <div>
+                        <span class="font-bold text-xl tracking-tight bg-gradient-to-r from-brand-600 to-indigo-600 bg-clip-text text-transparent">CampusHub</span>
+                        <span class="hidden sm:inline-block text-xs bg-brand-50 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300 px-2 py-0.5 rounded-full font-medium ml-2">v1.0</span>
+                    </div>
+                </div>
+
+                <!-- Navigation Tabs -->
+                <nav class="hidden md:flex space-x-1 bg-slate-100 dark:bg-slate-900/60 p-1 rounded-xl">
+                    <button onclick="switchTab('tasks')" id="tab-tasks" class="tab-btn px-4 py-2 text-sm font-medium rounded-lg transition-all flex items-center gap-2 bg-white dark:bg-slate-800 text-brand-600 dark:text-brand-400 shadow-sm">
+                        <i class="fa-solid fa-list-check"></i> 課題管理
+                    </button>
+                    <button onclick="switchTab('timetable')" id="tab-timetable" class="tab-btn px-4 py-2 text-sm font-medium rounded-lg transition-all flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200">
+                        <i class="fa-solid fa-calendar-days"></i> 時間割
+                    </button>
+                    <button onclick="switchTab('pomodoro')" id="tab-pomodoro" class="tab-btn px-4 py-2 text-sm font-medium rounded-lg transition-all flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200">
+                        <i class="fa-solid fa-stopwatch"></i> ポモドーロ
+                    </button>
+                </nav>
+
+                <!-- Actions / Controls -->
+                <div class="flex items-center gap-2">
+                    <!-- Dark Mode Toggle -->
+                    <button id="theme-toggle" onclick="toggleTheme()" class="p-2.5 rounded-xl text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700/60 transition-colors" title="テーマ切り替え">
+                        <i id="theme-icon" class="fa-solid fa-moon text-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Navigation Row -->
+        <div class="md:hidden border-t border-slate-200 dark:border-slate-700 flex justify-around p-1.5 bg-slate-50 dark:bg-slate-800/80">
+            <button onclick="switchTab('tasks')" id="mobile-tab-tasks" class="mobile-tab-btn flex-1 py-2 text-xs font-medium text-center rounded-lg text-brand-600 dark:text-brand-400 bg-white dark:bg-slate-700 shadow-sm">
+                <i class="fa-solid fa-list-check block text-base mb-0.5"></i> 課題
+            </button>
+            <button onclick="switchTab('timetable')" id="mobile-tab-timetable" class="mobile-tab-btn flex-1 py-2 text-xs font-medium text-center rounded-lg text-slate-500 dark:text-slate-400">
+                <i class="fa-solid fa-calendar-days block text-base mb-0.5"></i> 時間割
+            </button>
+            <button onclick="switchTab('pomodoro')" id="mobile-tab-pomodoro" class="mobile-tab-btn flex-1 py-2 text-xs font-medium text-center rounded-lg text-slate-500 dark:text-slate-400">
+                <i class="fa-solid fa-stopwatch block text-base mb-0.5"></i> ポモドーロ
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-7xl w-full auto-margin mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- 1. TASKS VIEW (KANBAN & LIST) -->
+        <section id="view-tasks" class="view-content space-y-6">
+            <!-- Header Bar -->
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <div>
+                    <h1 class="text-xl font-bold text-slate-900 dark:text-white">課題・タスク管理</h1>
+                    <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400">講義のレポートや試験の準備を一覧で管理</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button onclick="openTaskModal()" class="w-full sm:w-auto bg-brand-600 hover:bg-brand-700 text-white font-medium px-4 py-2 rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 text-sm">
+                        <i class="fa-solid fa-plus"></i> 新規課題を追加
+                    </button>
+                </div>
+            </div>
+
+            <!-- Kanban Columns -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Todo Column -->
+                <div class="bg-slate-100 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 flex flex-col min-h-[500px]">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-amber-500"></span>
+                            <h2 class="font-semibold text-slate-800 dark:text-slate-200">未着手 (To Do)</h2>
+                        </div>
+                        <span id="count-todo" class="text-xs bg-slate-200 dark:bg-slate-700 px-2.5 py-1 rounded-full font-semibold text-slate-600 dark:text-slate-300">0</span>
+                    </div>
+                    <div id="col-todo" class="task-list flex-1 space-y-3">
+                        <!-- Dynamic content -->
+                    </div>
+                </div>
+
+                <!-- In Progress Column -->
+                <div class="bg-slate-100 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 flex flex-col min-h-[500px]">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-blue-500"></span>
+                            <h2 class="font-semibold text-slate-800 dark:text-slate-200">進行中 (In Progress)</h2>
+                        </div>
+                        <span id="count-inprogress" class="text-xs bg-slate-200 dark:bg-slate-700 px-2.5 py-1 rounded-full font-semibold text-slate-600 dark:text-slate-300">0</span>
+                    </div>
+                    <div id="col-inprogress" class="task-list flex-1 space-y-3">
+                        <!-- Dynamic content -->
+                    </div>
+                </div>
+
+                <!-- Completed Column -->
+                <div class="bg-slate-100 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 flex flex-col min-h-[500px]">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+                            <h2 class="font-semibold text-slate-800 dark:text-slate-200">完了 (Done)</h2>
+                        </div>
+                        <span id="count-done" class="text-xs bg-slate-200 dark:bg-slate-700 px-2.5 py-1 rounded-full font-semibold text-slate-600 dark:text-slate-300">0</span>
+                    </div>
+                    <div id="col-done" class="task-list flex-1 space-y-3">
+                        <!-- Dynamic content -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. TIMETABLE VIEW -->
+        <section id="view-timetable" class="view-content space-y-6 hidden">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <div>
+                    <h1 class="text-xl font-bold text-slate-900 dark:text-white">履修時間割</h1>
+                    <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400">クリックして各コマの授業名や教室情報を追加・編集</p>
+                </div>
+            </div>
+
+            <!-- Timetable Grid -->
+            <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-x-auto">
+                <table class="w-full text-left min-w-[640px]">
+                    <thead>
+                        <tr class="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700 text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase">
+                            <th class="p-3 text-center w-16">時限</th>
+                            <th class="p-3 text-center w-1/5">月曜日</th>
+                            <th class="p-3 text-center w-1/5">火曜日</th>
+                            <th class="p-3 text-center w-1/5">水曜日</th>
+                            <th class="p-3 text-center w-1/5">木曜日</th>
+                            <th class="p-3 text-center w-1/5">金曜日</th>
+                        </tr>
+                    </thead>
+                    <tbody id="timetable-body" class="divide-y divide-slate-200 dark:divide-slate-700">
+                        <!-- Dynamic Grid Generation -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 3. POMODORO VIEW -->
+        <section id="view-pomodoro" class="view-content space-y-6 hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Main Timer Container -->
+                <div class="lg:col-span-2 bg-white dark:bg-slate-800 p-6 sm:p-10 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col items-center justify-center text-center">
+                    <!-- Status Badge -->
+                    <div id="pomo-status-badge" class="px-4 py-1.5 rounded-full text-sm font-semibold mb-6 bg-brand-50 text-brand-600 dark:bg-brand-900/40 dark:text-brand-300">
+                        集中タイム (Focus Time)
+                    </div>
+
+                    <!-- Timer Display -->
+                    <div class="text-6xl sm:text-8xl font-black tracking-tight text-slate-900 dark:text-white font-mono my-4" id="timer-display">
+                        25:00
+                    </div>
+
+                    <!-- Mode Selector -->
+                    <div class="flex gap-2 my-6">
+                        <button onclick="setTimerMode('work')" id="mode-work-btn" class="px-4 py-1.5 rounded-xl text-xs sm:text-sm font-medium bg-brand-600 text-white shadow-sm transition-all">作業 (25分)</button>
+                        <button onclick="setTimerMode('shortBreak')" id="mode-short-btn" class="px-4 py-1.5 rounded-xl text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all">休憩 (5分)</button>
+                        <button onclick="setTimerMode('longBreak')" id="mode-long-btn" class="px-4 py-1.5 rounded-xl text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all">長休憩 (15分)</button>
+                    </div>
+
+                    <!-- Controls -->
+                    <div class="flex items-center gap-4 mt-2">
+                        <button id="pomo-start-btn" onclick="toggleTimer()" class="w-16 h-16 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white shadow-lg flex items-center justify-center text-2xl transition-all transform active:scale-95">
+                            <i class="fa-solid fa-play"></i>
+                        </button>
+                        <button onclick="resetTimer()" class="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-200 flex items-center justify-center text-lg transition-all">
+                            <i class="fa-solid fa-rotate-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stats & Session Logs -->
+                <div class="space-y-6">
+                    <!-- Dashboard Cards -->
+                    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
+                        <h2 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                            <i class="fa-solid fa-chart-line text-brand-600"></i> 学習統計
+                        </h2>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700/50">
+                                <span class="text-xs text-slate-500 dark:text-slate-400 font-medium block">完了セッション</span>
+                                <span id="stat-sessions" class="text-2xl font-bold text-slate-900 dark:text-white">0</span>
+                            </div>
+                            <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700/50">
+                                <span class="text-xs text-slate-500 dark:text-slate-400 font-medium block">総集中時間</span>
+                                <span id="stat-time" class="text-2xl font-bold text-brand-600 dark:text-brand-400">0 分</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Logs list -->
+                    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col h-[280px]">
+                        <h2 class="font-bold text-lg text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-clock-rotate-left text-brand-600"></i> 勉強ログ
+                        </h2>
+                        <div id="pomo-logs" class="flex-1 overflow-y-auto space-y-2 pr-1">
+                            <!-- Dynamic Logs -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal for Task Add/Edit -->
+    <div id="task-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full mx-4 p-6 shadow-2xl border border-slate-200 dark:border-slate-700 transform transition-transform scale-95 duration-200" id="task-modal-card">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="modal-title" class="text-lg font-bold text-slate-900 dark:text-white">課題の追加</h3>
+                <button onclick="closeTaskModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <form id="task-form" onsubmit="handleTaskSubmit(event)" class="space-y-4">
+                <input type="hidden" id="task-id">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 mb-1">タイトル *</label>
+                    <input type="text" id="task-title" required placeholder="例: データ構造の最終レポート提出" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 mb-1">科目名</label>
+                    <input type="text" id="task-course" placeholder="例: 情報処理III" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 mb-1">提出期限</label>
+                        <input type="date" id="task-deadline" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 mb-1">優先度</label>
+                        <select id="task-priority" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm">
+                            <option value="low">低</option>
+                            <option value="medium" selected>中</option>
+                            <option value="high">高</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 mb-1">ステータス</label>
+                    <select id="task-status" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm">
+                        <option value="todo">未着手</option>
+                        <option value="inprogress">進行中</option>
+                        <option value="done">完了</option>
+                    </select>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeTaskModal()" class="px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-all">キャンセル</button>
+                    <button type="submit" class="px-4 py-2 text-sm bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-medium transition-all shadow-md">保存する</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal for Timetable Slot -->
+    <div id="timetable-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-sm w-full mx-4 p-6 shadow-2xl border border-slate-200 dark:border-slate-700 transform transition-transform scale-95 duration-200">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-slate-900 dark:text-white">講義情報の入力</h3>
+                <button onclick="closeTimetableModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <form id="timetable-form" onsubmit="handleTimetableSubmit(event)" class="space-y-4">
+                <input type="hidden" id="slot-day">
+                <input type="hidden" id="slot-period">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 mb-1">講義・科目名</label>
+                    <input type="text" id="slot-name" placeholder="例: 専門コース演習III" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 mb-1">教室 / オンライン</label>
+                    <input type="text" id="slot-room" placeholder="例: 5号館 302教室" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 mb-1">担当教員</label>
+                    <input type="text" id="slot-teacher" placeholder="例: 山田 太郎 教授" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm">
+                </div>
+                <div class="flex justify-between items-center pt-2">
+                    <button type="button" onclick="clearTimetableSlot()" class="px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl transition-all">削除</button>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="closeTimetableModal()" class="px-3 py-2 text-sm text-slate-600 dark:text-slate-300 rounded-xl">キャンセル</button>
+                        <button type="submit" class="px-4 py-2 text-sm bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-medium transition-all shadow-md">保存</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Application JavaScript Logic -->
+    <script>
+        /* --- STATE MANAGEMENT & LOCAL STORAGE --- */
+        let state = {
+            tasks: JSON.parse(localStorage.getItem('campushub_tasks')) || [
+                { id: '1', title: '専門コース演習III Webサービス発表提出', course: '専門コース演習III', deadline: '2026-11-10', priority: 'high', status: 'inprogress' },
+                { id: '2', title: '小テスト復習', course: 'データベース論', deadline: '2026-11-05', priority: 'medium', status: 'todo' }
+            ],
+            timetable: JSON.parse(localStorage.getItem('campushub_timetable')) || {},
+            pomoLogs: JSON.parse(localStorage.getItem('campushub_pomo_logs')) || []
+        };
+
+        function saveData() {
+            localStorage.setItem('campushub_tasks', JSON.stringify(state.tasks));
+            localStorage.setItem('campushub_timetable', JSON.stringify(state.timetable));
+            localStorage.setItem('campushub_pomo_logs', JSON.stringify(state.pomoLogs));
+        }
+
+        /* --- THEME TOGGLE --- */
+        function initTheme() {
+            if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+                document.getElementById('theme-icon').className = 'fa-solid fa-sun text-amber-400 text-lg';
+            } else {
+                document.documentElement.classList.remove('dark');
+                document.getElementById('theme-icon').className = 'fa-solid fa-moon text-slate-600 text-lg';
+            }
+        }
+
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            document.getElementById('theme-icon').className = isDark ? 'fa-solid fa-sun text-amber-400 text-lg' : 'fa-solid fa-moon text-slate-600 text-lg';
+        }
+
+        /* --- NAVIGATION TABS --- */
+        function switchTab(tabName) {
+            document.querySelectorAll('.view-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`view-${tabName}`).classList.remove('hidden');
+
+            // Desktop tab highlights
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.className = 'tab-btn px-4 py-2 text-sm font-medium rounded-lg transition-all flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200';
+            });
+            const activeTab = document.getElementById(`tab-${tabName}`);
+            if (activeTab) {
+                activeTab.className = 'tab-btn px-4 py-2 text-sm font-medium rounded-lg transition-all flex items-center gap-2 bg-white dark:bg-slate-800 text-brand-600 dark:text-brand-400 shadow-sm';
+            }
+
+            // Mobile tab highlights
+            document.querySelectorAll('.mobile-tab-btn').forEach(btn => {
+                btn.className = 'mobile-tab-btn flex-1 py-2 text-xs font-medium text-center rounded-lg text-slate-500 dark:text-slate-400';
+            });
+            const activeMobileTab = document.getElementById(`mobile-tab-${tabName}`);
+            if (activeMobileTab) {
+                activeMobileTab.className = 'mobile-tab-btn flex-1 py-2 text-xs font-medium text-center rounded-lg text-brand-600 dark:text-brand-400 bg-white dark:bg-slate-700 shadow-sm';
+            }
+        }
+
+        /* --- TASK / KANBAN MODULE --- */
+        function renderTasks() {
+            const cols = { todo: document.getElementById('col-todo'), inprogress: document.getElementById('col-inprogress'), done: document.getElementById('col-done') };
+            const counts = { todo: 0, inprogress: 0, done: 0 };
+
+            Object.values(cols).forEach(el => el.innerHTML = '');
+
+            state.tasks.forEach(task => {
+                counts[task.status]++;
+                const card = createTaskCard(task);
+                if (cols[task.status]) {
+                    cols[task.status].appendChild(card);
+                }
+            });
+
+            document.getElementById('count-todo').textContent = counts.todo;
+            document.getElementById('count-inprogress').textContent = counts.inprogress;
+            document.getElementById('count-done').textContent = counts.done;
+        }
+
+        function createTaskCard(task) {
+            const card = document.createElement('div');
+            card.className = 'bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-all space-y-3';
+            
+            // Priority styles
+            const priorityColors = {
+                high: 'bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-300',
+                medium: 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300',
+                low: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300'
+            };
+            const priorityLabels = { high: '高', medium: '中', low: '低' };
+
+            // Remaining Days Calculation
+            let deadlineHtml = '';
+            if (task.deadline) {
+                const today = new Date();
+                today.setHours(0,0,0,0);
+                const target = new Date(task.deadline);
+                const diffTime = target - today;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                let badgeClass = 'text-slate-500 dark:text-slate-400';
+                let text = `期日: ${task.deadline}`;
+                if (diffDays < 0) {
+                    badgeClass = 'text-red-600 dark:text-red-400 font-semibold';
+                    text = `期限切れ (${Math.abs(diffDays)}日前)`;
+                } else if (diffDays === 0) {
+                    badgeClass = 'text-amber-600 dark:text-amber-400 font-semibold';
+                    text = '本日締め切り';
+                } else if (diffDays <= 3) {
+                    badgeClass = 'text-amber-600 dark:text-amber-400';
+                    text = `残り ${diffDays} 日`;
+                }
+
+                deadlineHtml = `<span class="text-xs flex items-center gap-1 ${badgeClass}"><i class="fa-regular fa-clock"></i> ${text}</span>`;
+            }
+
+            card.innerHTML = `
+                <div class="flex justify-between items-start gap-2">
+                    <h3 class="font-semibold text-slate-800 dark:text-slate-100 text-sm leading-snug">${escapeHtml(task.title)}</h3>
+                    <div class="flex items-center gap-1">
+                        <button onclick="editTask('${task.id}')" class="text-slate-400 hover:text-brand-600 p-1 text-xs"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="deleteTask('${task.id}')" class="text-slate-400 hover:text-red-600 p-1 text-xs"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                </div>
+                ${task.course ? `<div class="text-xs font-medium text-brand-600 dark:text-brand-400">${escapeHtml(task.course)}</div>` : ''}
+                <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700/60">
+                    <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${priorityColors[task.priority]}">優先度: ${priorityLabels[task.priority]}</span>
+                    ${deadlineHtml}
+                </div>
+            `;
+            return card;
+        }
+
+        function openTaskModal(taskId = null) {
+            const modal = document.getElementById('task-modal');
+            const card = document.getElementById('task-modal-card');
+            const form = document.getElementById('task-form');
+            form.reset();
+
+            if (taskId) {
+                const task = state.tasks.find(t => t.id === taskId);
+                if (task) {
+                    document.getElementById('modal-title').textContent = '課題の編集';
+                    document.getElementById('task-id').value = task.id;
+                    document.getElementById('task-title').value = task.title;
+                    document.getElementById('task-course').value = task.course || '';
+                    document.getElementById('task-deadline').value = task.deadline || '';
+                    document.getElementById('task-priority').value = task.priority;
+                    document.getElementById('task-status').value = task.status;
+                }
+            } else {
+                document.getElementById('modal-title').textContent = '新規課題の追加';
+                document.getElementById('task-id').value = '';
+            }
+
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                card.classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeTaskModal() {
+            const modal = document.getElementById('task-modal');
+            const card = document.getElementById('task-modal-card');
+            modal.classList.add('opacity-0');
+            card.classList.add('scale-95');
+            setTimeout(() => modal.classList.add('hidden'), 200);
+        }
+
+        function handleTaskSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('task-id').value;
+            const title = document.getElementById('task-title').value;
+            const course = document.getElementById('task-course').value;
+            const deadline = document.getElementById('task-deadline').value;
+            const priority = document.getElementById('task-priority').value;
+            const status = document.getElementById('task-status').value;
+
+            if (id) {
+                const index = state.tasks.findIndex(t => t.id === id);
+                if (index !== -1) {
+                    state.tasks[index] = { id, title, course, deadline, priority, status };
+                }
+            } else {
+                state.tasks.push({
+                    id: Date.now().toString(),
+                    title, course, deadline, priority, status
+                });
+            }
+
+            saveData();
+            renderTasks();
+            closeTaskModal();
+        }
+
+        function editTask(id) { openTaskModal(id); }
+        function deleteTask(id) {
+            state.tasks = state.tasks.filter(t => t.id !== id);
+            saveData();
+            renderTasks();
+        }
+
+        /* --- TIMETABLE MODULE --- */
+        function renderTimetable() {
+            const tbody = document.getElementById('timetable-body');
+            tbody.innerHTML = '';
+
+            const days = ['mon', 'tue', 'wed', 'thu', 'fri'];
+
+            for (let period = 1; period <= 5; period++) {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors';
+                
+                let rowHtml = `<td class="p-3 text-center text-xs font-bold text-slate-500 border-r border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/30">${period}限</td>`;
+
+                days.forEach(day => {
+                    const key = `${day}_${period}`;
+                    const slot = state.timetable[key];
+
+                    if (slot && slot.name) {
+                        rowHtml += `
+                            <td onclick="openTimetableModal('${day}', ${period})" class="p-2 border-r border-slate-200 dark:border-slate-700 cursor-pointer h-24 align-top transition-colors hover:bg-brand-50/50 dark:hover:bg-brand-950/20">
+                                <div class="bg-brand-50 dark:bg-brand-900/30 border border-brand-200 dark:border-brand-800/50 p-2 rounded-xl h-full flex flex-col justify-between">
+                                    <div class="font-bold text-xs text-brand-900 dark:text-brand-200 line-clamp-2">${escapeHtml(slot.name)}</div>
+                                    <div class="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+                                        ${slot.room ? `<i class="fa-solid fa-location-dot"></i> ${escapeHtml(slot.room)}<br>` : ''}
+                                        ${slot.teacher ? `<i class="fa-solid fa-user"></i> ${escapeHtml(slot.teacher)}` : ''}
+                                    </div>
+                                </div>
+                            </td>
+                        `;
+                    } else {
+                        rowHtml += `
+                            <td onclick="openTimetableModal('${day}', ${period})" class="p-2 border-r border-slate-200 dark:border-slate-700 cursor-pointer h-24 align-top hover:bg-slate-100/60 dark:hover:bg-slate-700/30 transition-colors">
+                                <div class="h-full border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl flex items-center justify-center text-slate-300 dark:text-slate-600 hover:text-slate-400">
+                                    <i class="fa-solid fa-plus"></i>
+                                </div>
+                            </td>
+                        `;
+                    }
+                });
+
+                tr.innerHTML = rowHtml;
+                tbody.appendChild(tr);
+            }
+        }
+
+        function openTimetableModal(day, period) {
+            document.getElementById('slot-day').value = day;
+            document.getElementById('slot-period').value = period;
+
+            const key = `${day}_${period}`;
+            const slot = state.timetable[key] || {};
+
+            document.getElementById('slot-name').value = slot.name || '';
+            document.getElementById('slot-room').value = slot.room || '';
+            document.getElementById('slot-teacher').value = slot.teacher || '';
+
+            const modal = document.getElementById('timetable-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.classList.remove('opacity-0'), 10);
+        }
+
+        function closeTimetableModal() {
+            const modal = document.getElementById('timetable-modal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 200);
+        }
+
+        function handleTimetableSubmit(e) {
+            e.preventDefault();
+            const day = document.getElementById('slot-day').value;
+            const period = document.getElementById('slot-period').value;
+            const key = `${day}_${period}`;
+
+            state.timetable[key] = {
+                name: document.getElementById('slot-name').value,
+                room: document.getElementById('slot-room').value,
+                teacher: document.getElementById('slot-teacher').value
+            };
+
+            saveData();
+            renderTimetable();
+            closeTimetableModal();
+        }
+
+        function clearTimetableSlot() {
+            const day = document.getElementById('slot-day').value;
+            const period = document.getElementById('slot-period').value;
+            delete state.timetable[`${day}_${period}`];
+            saveData();
+            renderTimetable();
+            closeTimetableModal();
+        }
+
+        /* --- POMODORO TIMER MODULE --- */
+        let timer = {
+            timeLeft: 25 * 60,
+            duration: 25 * 60,
+            isRunning: false,
+            interval: null,
+            mode: 'work' // work, shortBreak, longBreak
+        };
+
+        function setTimerMode(mode) {
+            if (timer.isRunning) toggleTimer();
+            timer.mode = mode;
+
+            const badge = document.getElementById('pomo-status-badge');
+            
+            if (mode === 'work') {
+                timer.duration = 25 * 60;
+                badge.textContent = '集中タイム (Focus Time)';
+                badge.className = 'px-4 py-1.5 rounded-full text-sm font-semibold mb-6 bg-brand-50 text-brand-600 dark:bg-brand-900/40 dark:text-brand-300';
+            } else if (mode === 'shortBreak') {
+                timer.duration = 5 * 60;
+                badge.textContent = '小休憩 (Short Break)';
+                badge.className = 'px-4 py-1.5 rounded-full text-sm font-semibold mb-6 bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300';
+            } else if (mode === 'longBreak') {
+                timer.duration = 15 * 60;
+                badge.textContent = '長休憩 (Long Break)';
+                badge.className = 'px-4 py-1.5 rounded-full text-sm font-semibold mb-6 bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-300';
+            }
+
+            // Update button styles
+            ['work', 'short', 'long'].forEach(m => {
+                const btn = document.getElementById(`mode-${m}-btn`);
+                btn.className = (mode === m || (m === 'short' && mode === 'shortBreak') || (m === 'long' && mode === 'longBreak'))
+                    ? 'px-4 py-1.5 rounded-xl text-xs sm:text-sm font-medium bg-brand-600 text-white shadow-sm transition-all'
+                    : 'px-4 py-1.5 rounded-xl text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all';
+            });
+
+            resetTimer();
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timer.timeLeft / 60);
+            const seconds = timer.timeLeft % 60;
+            document.getElementById('timer-display').textContent = 
+                `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        function toggleTimer() {
+            const startBtn = document.getElementById('pomo-start-btn');
+            if (timer.isRunning) {
+                clearInterval(timer.interval);
+                timer.isRunning = false;
+                startBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+                startBtn.className = 'w-16 h-16 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white shadow-lg flex items-center justify-center text-2xl transition-all transform active:scale-95';
+            } else {
+                timer.isRunning = true;
+                startBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+                startBtn.className = 'w-16 h-16 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white shadow-lg flex items-center justify-center text-2xl transition-all transform active:scale-95';
+                
+                timer.interval = setInterval(() => {
+                    if (timer.timeLeft > 0) {
+                        timer.timeLeft--;
+                        updateTimerDisplay();
+                    } else {
+                        onTimerComplete();
+                    }
+                }, 1000);
+            }
+        }
+
+        function resetTimer() {
+            if (timer.isRunning) toggleTimer();
+            timer.timeLeft = timer.duration;
+            updateTimerDisplay();
+        }
+
+        function onTimerComplete() {
+            toggleTimer();
+            if (timer.mode === 'work') {
+                const now = new Date();
+                const log = {
+                    id: Date.now(),
+                    minutes: 25,
+                    timestamp: `${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`
+                };
+                state.pomoLogs.unshift(log);
+                saveData();
+                renderPomodoroStats();
+            }
+            alert(timer.mode === 'work' ? 'お疲れ様でした！集中タイム終了です。休憩しましょう！' : '休憩終了です！次の作業を始めましょう！');
+        }
+
+        function renderPomodoroStats() {
+            const totalSessions = state.pomoLogs.length;
+            const totalMinutes = state.pomoLogs.reduce((acc, curr) => acc + curr.minutes, 0);
+
+            document.getElementById('stat-sessions').textContent = totalSessions;
+            document.getElementById('stat-time').textContent = `${totalMinutes} 分`;
+
+            const logsContainer = document.getElementById('pomo-logs');
+            logsContainer.innerHTML = '';
+
+            if (state.pomoLogs.length === 0) {
+                logsContainer.innerHTML = '<div class="text-xs text-slate-400 text-center py-6">まだログはありません</div>';
+                return;
+            }
+
+            state.pomoLogs.forEach(log => {
+                const el = document.createElement('div');
+                el.className = 'flex justify-between items-center text-xs p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-700/50';
+                el.innerHTML = `
+                    <span class="font-medium text-slate-700 dark:text-slate-300"><i class="fa-solid fa-circle-check text-emerald-500 mr-1.5"></i> 25分 集中完了</span>
+                    <span class="text-slate-400">${log.timestamp}</span>
+                `;
+                logsContainer.appendChild(el);
+            });
+        }
+
+        /* --- UTILS --- */
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>"']/g, function(m) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+            });
+        }
+
+        /* --- INITIALIZATION --- */
+        window.onload = function() {
+            initTheme();
+            renderTasks();
+            renderTimetable();
+            renderPomodoroStats();
+            updateTimerDisplay();
+        };
+    </script>
+</body>
+</html>
